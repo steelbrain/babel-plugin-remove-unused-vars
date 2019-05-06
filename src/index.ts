@@ -85,22 +85,40 @@ export default function({ types: t }) {
   const flaggingVisitors = {
     Identifier(path) {
       const { node } = path
-      if (path.isReferencedIdentifier() && !path.inType('VariableDeclarator')) {
-        const binding = path.scope.getBinding(node.name)
-        if (binding) {
-          const { path: bindingPath } = binding
+      if (!path.isReferencedIdentifier()) {
+        return
+      }
 
-          if (t.isIdentifier(bindingPath)) {
-            flagIdentifierAsUsed(bindingPath)
+      let childPath = path
+      let parentPath = childPath.parentPath
+      while (parentPath) {
+        if (parentPath.node.type === 'VariableDeclarator') {
+          // Allow variable declaration in parents, but only when
+          // we're on the init side and not on the id side.
+          if (parentPath.node.init !== childPath.node) {
+            return
           } else {
-            bindingPath.traverse({
-              Identifier(idPath) {
-                if (idPath.node.name === node.name) {
-                  flagIdentifierAsUsed(idPath)
-                }
-              },
-            })
+            break
           }
+        }
+        childPath = parentPath
+        parentPath = parentPath.parentPath
+      }
+
+      const binding = path.scope.getBinding(node.name)
+      if (binding) {
+        const { path: bindingPath } = binding
+
+        if (t.isIdentifier(bindingPath)) {
+          flagIdentifierAsUsed(bindingPath)
+        } else {
+          bindingPath.traverse({
+            Identifier(idPath) {
+              if (idPath.node.name === node.name) {
+                flagIdentifierAsUsed(idPath)
+              }
+            },
+          })
         }
       }
     },

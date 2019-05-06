@@ -31,7 +31,9 @@
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
     "@babel/preset-typescript": "^7.3.3",
+    "@babel/register": "^7.4.4",
     "ava": "^1.4.1",
+    "cool-trim": "^1.1.1",
     "prettier": "^1.17.0",
     "sb-babel-cli": "^2.0.0"
   },
