@@ -14,7 +14,7 @@ export default function({ types: t }) {
     const params = path.get('params')
 
     params.forEach(function(param) {
-      if (t.isIdentifier(param.node)) {
+      if (t.isIdentifier(param)) {
         markingIdentifierVisitor(param)
       } else {
         param.traverse({ Identifier: markingIdentifierVisitor })
@@ -90,7 +90,7 @@ export default function({ types: t }) {
         if (binding) {
           const { path: bindingPath } = binding
 
-          if (t.isIdentifier(bindingPath.node)) {
+          if (t.isIdentifier(bindingPath)) {
             flagIdentifierAsUsed(bindingPath)
           } else {
             bindingPath.traverse({
@@ -115,13 +115,29 @@ export default function({ types: t }) {
   function removingParamsVisitor(path) {
     const params = path.get('params')
 
-    params.forEach(function(param) {
-      if (t.isIdentifier(param.node)) {
-        // removingIdentifierVisitor(param)
+    let i = params.length
+    while (i--) {
+      const param = params[i]
+      let unused = false
+      if (t.isIdentifier(param)) {
+        if (isIdentifierUnused(param)) {
+          unused = true
+        }
       } else {
-        // param.traverse({ Identifier: removingIdentifierVisitor })
+        param.traverse({
+          Identifier(idPath) {
+            if (isIdentifierUnused(idPath)) {
+              unused = true
+            }
+          },
+        })
       }
-    })
+      if (!unused) {
+        break
+      }
+    }
+
+    path.node.params = path.node.params.slice(0, i + 1)
   }
   function removingImportVisitor(path) {
     const localPath = path.get('local')
@@ -191,7 +207,6 @@ export default function({ types: t }) {
         } else {
           unusedIdentifiers.forEach(function(unusedIdentifier) {
             if (t.isObjectProperty(unusedIdentifier.parentPath)) {
-              // console.log(unusedIdentifier.node, unusedIdentifier.parentPath.node)
               unusedIdentifier.parentPath.remove()
             } else {
               unusedIdentifier.remove()
