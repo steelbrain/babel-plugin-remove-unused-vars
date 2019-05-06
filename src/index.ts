@@ -22,23 +22,32 @@ export default function({ types: t }) {
     })
   }
   function markingImportVisitor(path) {
-    const { node } = path
+    const localPath = path.get('local')
 
-    if (t.isIdentifier(node.local)) {
-      markingIdentifierVisitor(path.get('local'))
+    if (t.isIdentifier(localPath)) {
+      markingIdentifierVisitor(localPath)
     } else {
-      path.get('local').traverse({ Identifier: markingIdentifierVisitor })
+      localPath.traverse({ Identifier: markingIdentifierVisitor })
     }
   }
 
   const markingVisitors = {
     VariableDeclarator(path) {
-      const { node } = path
+      const idPath = path.get('id')
 
-      if (t.isIdentifier(node.id)) {
-        markingIdentifierVisitor(path.get('id'))
+      if (t.isIdentifier(idPath)) {
+        markingIdentifierVisitor(idPath)
+      } else if (t.isObjectPattern(idPath)) {
+        idPath.get('properties').map(function(propertyPath) {
+          const propertyKeyPath = propertyPath.get('key')
+          if (t.isIdentifier(propertyKeyPath)) {
+            markingIdentifierVisitor(propertyKeyPath)
+          } else {
+            propertyKeyPath.traverse({ Identifier: markingIdentifierVisitor })
+          }
+        })
       } else {
-        path.get('id').traverse({ Identifier: markingIdentifierVisitor })
+        // Unknown stuff, better to not handle.
       }
     },
     ImportDeclaration(path) {
@@ -63,7 +72,7 @@ export default function({ types: t }) {
 
   function flagIdentifierAsUsed(path) {
     const { node } = path
-    if (node[SYM_IDENTIFIER_TRACKED]) {
+    if (node[SYM_IDENTIFIER_TRACKED] && !path.inType('VariableDeclarator')) {
       node[SYM_IDENTIFIER_USED] = true
     }
   }
@@ -103,32 +112,68 @@ export default function({ types: t }) {
     })
   }
   function removingImportVisitor(path) {
-    const { node } = path
+    const localPath = path.get('local')
 
-    if (t.isIdentifier(node.local)) {
-      if (isIdentifierUnused(path.get('local'))) {
+    if (t.isIdentifier(localPath)) {
+      if (isIdentifierUnused(localPath)) {
         path.remove()
       }
+    } else {
+      // NOTE: This part is untested.
+      localPath.traverse({
+        Identifier(idPath) {
+          if (isIdentifierUnused(idPath.get('local'))) {
+            idPath.remove()
+          }
+        },
+      })
     }
   }
 
   const removingVisitors = {
     VariableDeclarator(path) {
       // If variable assignment comes as part of function expression
-      // and function is require, remove the function call too.
-
-      const { node } = path
-
-      if (t.isIdentifier(node.id)) {
-        const idPath = path.get('id')
+      // remove the function call too.
+      const idPath = path.get('id')
+      if (t.isIdentifier(idPath)) {
         if (isIdentifierUnused(idPath)) {
           // Remove the declarator node entirely.
           path.parentPath.insertBefore(path.init)
           path.remove()
         }
-      } else {
-        // TODO
-        // Variable destructuring assignments
+      } else if (t.isObjectPattern(idPath)) {
+        let usedIdentifiers = 0
+        const unusedIdentifiers = []
+        const properties = idPath.get('properties')
+        properties.map(function(propertyPath) {
+          const propertyKeyPath = propertyPath.get('key')
+          if (t.isIdentifier(propertyKeyPath)) {
+            if (isIdentifierUnused(propertyKeyPath)) {
+              unusedIdentifiers.push(propertyKeyPath)
+            } else {
+              usedIdentifiers++
+            }
+          } else {
+            propertyKeyPath.traverse({
+              Identifier(propertyKeyPathId) {
+                if (isIdentifierUnused(propertyKeyPathId)) {
+                  unusedIdentifiers.push(propertyKeyPathId)
+                } else {
+                  usedIdentifiers++
+                }
+              },
+            })
+          }
+        })
+        if (!usedIdentifiers) {
+          // Remove the declarator node entirely.
+          path.parentPath.insertBefore(path.init)
+          path.remove()
+        } else {
+          unusedIdentifiers.forEach(function(unusedIdentifier) {
+            unusedIdentifier.remove()
+          })
+        }
       }
     },
     ImportDeclaration(path) {
