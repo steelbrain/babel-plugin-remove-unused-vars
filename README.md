@@ -11,7 +11,22 @@ npm install --save-dev babel-plugin-remove-unused-vars
 
 ### Usage
 
-TODO
+```
+npx babel --no-babelrc --plugins babel-plugin-remove-unused-vars --out-dir src-2/ src/
+```
+
+This plugin is intended for source-to-source conversions. You can then replace original source
+with output source, and have a quick look over at git diff to see what was changed and revert any
+unwanted changes.
+
+### Features
+
+Removes
+
+- Unused imports
+- Unused function arguments
+- Unused results of function calls (ie. requires, or any others.)
+- Unused variables (even destructured ones)
 
 ### License
 
