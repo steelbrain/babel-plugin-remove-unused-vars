@@ -21,6 +21,15 @@ export default function({ types: t }) {
       }
     })
   }
+  function markingImportVisitor(path) {
+    const { node } = path
+
+    if (t.isIdentifier(node.local)) {
+      markingIdentifierVisitor(path.get('local'))
+    } else {
+      path.get('local').traverse({ Identifier: markingIdentifierVisitor })
+    }
+  }
 
   const markingVisitors = {
     VariableDeclarator(path) {
@@ -33,10 +42,10 @@ export default function({ types: t }) {
       }
     },
     ImportDeclaration(path) {
-      const specifiers = path.get('specifiers')
-
-      specifiers.forEach(function(specifier) {
-        specifier.traverse({ Identifier: markingIdentifierVisitor })
+      path.traverse({
+        ImportSpecifier: markingImportVisitor,
+        ImportDefaultSpecifier: markingImportVisitor,
+        ImportNamespaceSpecifier: markingImportVisitor,
       })
     },
     ...['ObjectMethod', 'ArrowFunctionExpression', 'ClassMethod', 'FunctionDeclaration', 'FunctionExpression'].reduce(
@@ -49,41 +58,89 @@ export default function({ types: t }) {
   }
 
   /**
+   * Flagging visitors
+   */
+
+  function flagIdentifierAsUsed(path) {
+    const { node } = path
+    if (node[SYM_IDENTIFIER_TRACKED]) {
+      node[SYM_IDENTIFIER_USED] = true
+    }
+  }
+
+  const flaggingVisitors = {
+    Identifier(path) {
+      const { node } = path
+      if (path.isReferencedIdentifier()) {
+        const binding = path.scope.getBinding(node.name)
+        if (binding) {
+          const { path } = binding
+          if (t.isIdentifier(path.node)) {
+            flagIdentifierAsUsed(path)
+          } else {
+            path.traverse({ Identifier: flagIdentifierAsUsed })
+          }
+        }
+      }
+    },
+  }
+
+  /**
    * Removing visitors.
    */
-  function removingIdentifierVisitor(path) {
-    const { node } = path
-
-    // TODO: Remove them.
+  function isIdentifierUnused(path) {
+    return path.node[SYM_IDENTIFIER_TRACKED] && !path.node[SYM_IDENTIFIER_USED]
   }
   function removingParamsVisitor(path) {
     const params = path.get('params')
 
     params.forEach(function(param) {
       if (t.isIdentifier(param.node)) {
-        removingIdentifierVisitor(param)
+        // removingIdentifierVisitor(param)
       } else {
-        param.traverse({ Identifier: removingIdentifierVisitor })
+        // param.traverse({ Identifier: removingIdentifierVisitor })
       }
     })
+  }
+  function removingImportVisitor(path) {
+    const { node } = path
+
+    if (t.isIdentifier(node.local)) {
+      if (isIdentifierUnused(path.get('local'))) {
+        path.remove()
+      }
+    }
   }
 
   const removingVisitors = {
     VariableDeclarator(path) {
+      // If variable assignment comes as part of function expression
+      // and function is require, remove the function call too.
+
       const { node } = path
 
       if (t.isIdentifier(node.id)) {
-        removingIdentifierVisitor(path.get('id'))
+        const idPath = path.get('id')
+        if (isIdentifierUnused(idPath)) {
+          // Remove the declarator node entirely.
+          path.parentPath.insertBefore(path.init)
+          path.remove()
+        }
       } else {
-        path.get('id').traverse({ Identifier: removingIdentifierVisitor })
+        // TODO
+        // Variable destructuring assignments
       }
     },
     ImportDeclaration(path) {
       const specifiers = path.get('specifiers')
-
-      specifiers.forEach(function(specifier) {
-        specifier.traverse({ Identifier: removingIdentifierVisitor })
+      path.traverse({
+        ImportSpecifier: removingImportVisitor,
+        ImportDefaultSpecifier: removingImportVisitor,
+        ImportNamespaceSpecifier: removingImportVisitor,
       })
+      if (specifiers.length && !path.node.specifiers.length) {
+        path.remove()
+      }
     },
     ...['ObjectMethod', 'ArrowFunctionExpression', 'ClassMethod', 'FunctionDeclaration', 'FunctionExpression'].reduce(
       (agg, curr) => ({
@@ -96,23 +153,17 @@ export default function({ types: t }) {
 
   return {
     visitor: {
-      ...markingVisitors,
       Program: {
         exit(path) {
-          // Mark the used ones
-          path.traverse({
-            Identifier(path) {
-              const { node } = path
-              if (path.isReferencedIdentifier()) {
-                const binding = path.scope.getBinding(node.name)
-                if (binding && binding.path.node[SYM_IDENTIFIER_TRACKED]) {
-                  binding.path.node[SYM_IDENTIFIER_USED] = true
-                }
-              }
-            },
-          })
-          // Remove the unused ones
-          path.traverse(removingVisitors)
+          const iterations = 5
+          for (let i = 0; i < iterations; i++) {
+            // Mark the relevant variables
+            path.traverse(markingVisitors)
+            // Mark the used ones
+            path.traverse(flaggingVisitors)
+            // Remove the unused ones
+            path.traverse(removingVisitors)
+          }
         },
       },
     },
