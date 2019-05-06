@@ -30,6 +30,18 @@ export default function({ types: t }) {
       localPath.traverse({ Identifier: markingIdentifierVisitor })
     }
   }
+  function markingObjectPatternVisitor(path) {
+    path.get('properties').map(function(propertyPath) {
+      const propertyValuePath = propertyPath.get('value')
+      if (t.isIdentifier(propertyValuePath)) {
+        markingIdentifierVisitor(propertyValuePath)
+      } else if (t.isObjectPattern(propertyValuePath)) {
+        markingObjectPatternVisitor(propertyValuePath)
+      } else {
+        propertyValuePath.traverse({ Identifier: markingIdentifierVisitor })
+      }
+    })
+  }
 
   const markingVisitors = {
     VariableDeclarator(path) {
@@ -38,14 +50,7 @@ export default function({ types: t }) {
       if (t.isIdentifier(idPath)) {
         markingIdentifierVisitor(idPath)
       } else if (t.isObjectPattern(idPath)) {
-        idPath.get('properties').map(function(propertyPath) {
-          const propertyKeyPath = propertyPath.get('key')
-          if (t.isIdentifier(propertyKeyPath)) {
-            markingIdentifierVisitor(propertyKeyPath)
-          } else {
-            propertyKeyPath.traverse({ Identifier: markingIdentifierVisitor })
-          }
-        })
+        markingObjectPatternVisitor(idPath)
       } else {
         // Unknown stuff, better to not handle.
       }
@@ -72,7 +77,7 @@ export default function({ types: t }) {
 
   function flagIdentifierAsUsed(path) {
     const { node } = path
-    if (node[SYM_IDENTIFIER_TRACKED] && !path.inType('VariableDeclarator')) {
+    if (node[SYM_IDENTIFIER_TRACKED]) {
       node[SYM_IDENTIFIER_USED] = true
     }
   }
@@ -80,14 +85,21 @@ export default function({ types: t }) {
   const flaggingVisitors = {
     Identifier(path) {
       const { node } = path
-      if (path.isReferencedIdentifier()) {
+      if (path.isReferencedIdentifier() && !path.inType('VariableDeclarator')) {
         const binding = path.scope.getBinding(node.name)
         if (binding) {
-          const { path } = binding
-          if (t.isIdentifier(path.node)) {
-            flagIdentifierAsUsed(path)
+          const { path: bindingPath } = binding
+
+          if (t.isIdentifier(bindingPath.node)) {
+            flagIdentifierAsUsed(bindingPath)
           } else {
-            path.traverse({ Identifier: flagIdentifierAsUsed })
+            bindingPath.traverse({
+              Identifier(idPath) {
+                if (idPath.node.name === node.name) {
+                  flagIdentifierAsUsed(idPath)
+                }
+              },
+            })
           }
         }
       }
@@ -129,6 +141,31 @@ export default function({ types: t }) {
       })
     }
   }
+  function removingObjectPatternCollector(path, usedIdentifiers, unusedIdentifiers) {
+    const properties = path.get('properties')
+    properties.map(function(propertyPath) {
+      const propertyValuePath = propertyPath.get('value')
+      if (t.isIdentifier(propertyValuePath)) {
+        if (isIdentifierUnused(propertyValuePath)) {
+          unusedIdentifiers.push(propertyValuePath)
+        } else {
+          usedIdentifiers.push(propertyValuePath)
+        }
+      } else if (t.isObjectPattern(propertyValuePath)) {
+        removingObjectPatternCollector(propertyValuePath, usedIdentifiers, unusedIdentifiers)
+      } else {
+        propertyValuePath.traverse({
+          Identifier(propertyValuePathId) {
+            if (isIdentifierUnused(propertyValuePathId)) {
+              unusedIdentifiers.push(propertyValuePathId)
+            } else {
+              usedIdentifiers.push(propertyValuePath)
+            }
+          },
+        })
+      }
+    })
+  }
 
   const removingVisitors = {
     VariableDeclarator(path) {
@@ -142,36 +179,30 @@ export default function({ types: t }) {
           path.remove()
         }
       } else if (t.isObjectPattern(idPath)) {
-        let usedIdentifiers = 0
+        const usedIdentifiers = []
         const unusedIdentifiers = []
-        const properties = idPath.get('properties')
-        properties.map(function(propertyPath) {
-          const propertyKeyPath = propertyPath.get('key')
-          if (t.isIdentifier(propertyKeyPath)) {
-            if (isIdentifierUnused(propertyKeyPath)) {
-              unusedIdentifiers.push(propertyKeyPath)
-            } else {
-              usedIdentifiers++
-            }
-          } else {
-            propertyKeyPath.traverse({
-              Identifier(propertyKeyPathId) {
-                if (isIdentifierUnused(propertyKeyPathId)) {
-                  unusedIdentifiers.push(propertyKeyPathId)
-                } else {
-                  usedIdentifiers++
-                }
-              },
-            })
-          }
-        })
-        if (!usedIdentifiers) {
+
+        removingObjectPatternCollector(idPath, usedIdentifiers, unusedIdentifiers)
+
+        if (!usedIdentifiers.length) {
           // Remove the declarator node entirely.
           path.parentPath.insertBefore(path.init)
           path.remove()
         } else {
           unusedIdentifiers.forEach(function(unusedIdentifier) {
-            unusedIdentifier.remove()
+            if (t.isObjectProperty(unusedIdentifier.parentPath)) {
+              // console.log(unusedIdentifier.node, unusedIdentifier.parentPath.node)
+              unusedIdentifier.parentPath.remove()
+            } else {
+              unusedIdentifier.remove()
+            }
+          })
+          idPath.traverse({
+            ObjectPattern(objectPatternPath) {
+              if (!objectPatternPath.node.properties.length) {
+                objectPatternPath.parentPath.remove()
+              }
+            },
           })
         }
       }
