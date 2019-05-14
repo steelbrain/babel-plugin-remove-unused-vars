@@ -141,4 +141,22 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       console.log(test());
     `,
   })
+
+  await testWithOutput({
+    test: t,
+    code: `
+      let y;
+
+      const x = z => y = z;
+
+      x();
+    `,
+    output: `
+      let y;
+
+      const x = z => y = z;
+
+      x();
+    `,
+  })
 })

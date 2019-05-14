@@ -85,14 +85,24 @@ export default function({ types: t }) {
   const flaggingVisitors = {
     Identifier(path) {
       const { node } = path
-      if (!path.isReferencedIdentifier()) {
+
+      let isReferenced = path.isReferencedIdentifier()
+      let isAssignment = false
+      if (!isReferenced) {
+        // const z = x => (y = x)
+        // y is *not* referenced in above example, handle that.
+        if (t.isAssignmentExpression(path.parentPath)) {
+          isAssignment = true
+        }
+      }
+      if (!isReferenced && !isAssignment) {
         return
       }
 
       let childPath = path
       let parentPath = childPath.parentPath
       while (parentPath) {
-        if (parentPath.node.type === 'VariableDeclarator') {
+        if (t.isVariableDeclarator(parentPath)) {
           // Allow variable declaration in parents, but only when
           // we're on the init side and not on the id side.
           if (parentPath.node.init !== childPath.node) {
@@ -100,6 +110,8 @@ export default function({ types: t }) {
           } else {
             break
           }
+        } else if (isAssignment && t.isDeclaration(parentPath)) {
+          return
         }
         childPath = parentPath
         parentPath = parentPath.parentPath
