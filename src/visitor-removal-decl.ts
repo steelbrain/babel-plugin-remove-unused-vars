@@ -25,7 +25,10 @@ export default {
       }
 
       console.log('parentPath', parentPath.node)
-    } else if (t.isExpressionStatement(statementParent)) {
+      return
+    }
+
+    if (t.isExpressionStatement(statementParent)) {
       const expressionPath = statementParent.get('expression') as NodePath<babelTypes.Node> | null
       if (t.isCallExpression(expressionPath)) {
         // - mark as used
@@ -35,7 +38,11 @@ export default {
       } else {
         console.log('unknown expression statement type', expressionPath.node.type)
       }
-    } else if (t.isVariableDeclaration(statementParent)) {
+
+      return
+    }
+
+    if (t.isVariableDeclaration(statementParent)) {
       const sideDecl = getSideInDeclaration(path, statementParent as NodePath<babelTypes.VariableDeclaration>)
       if (sideDecl === 'left') {
         if (t.isObjectProperty(parentPath)) {
@@ -56,12 +63,11 @@ export default {
           }
         } else {
         }
-
-        return
       }
-      // Ignore right here, remove the entire statement if left is unused
-    } else {
-      console.log('unknown statement type', statementParent.node.type)
+      // Ignore right side here, remove the entire statement if left is unused
+      return
     }
+
+    console.log('unknown statement type', statementParent.node.type)
   },
 }

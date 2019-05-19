@@ -22,15 +22,17 @@ export default {
       // Handle recursive destructuring here
       if (t.isImportDefaultSpecifier(parentPath)) {
         markNodeAsTracked(path.node)
-        return
       }
 
       console.log('parentPath', parentPath.node)
-    } else if (t.isExpressionStatement(statementParent)) {
+
+      return
+    }
+
+    if (t.isExpressionStatement(statementParent)) {
       const expressionPath = statementParent.get('expression') as NodePath<babelTypes.Node> | null
       if (t.isCallExpression(expressionPath)) {
         markNodeAsUsed(path)
-        return
       } else if (t.isAssignmentExpression(expressionPath)) {
         const sideAse = getSideInAssignmentExpression(path, expressionPath as NodePath<babelTypes.AssignmentExpression>)
         if (sideAse === 'right') {
@@ -39,7 +41,11 @@ export default {
       } else {
         console.log('unknown expression statement type', expressionPath.node.type)
       }
-    } else if (t.isVariableDeclaration(statementParent)) {
+
+      return
+    }
+
+    if (t.isVariableDeclaration(statementParent)) {
       const sideDecl = getSideInDeclaration(path, statementParent as NodePath<babelTypes.VariableDeclaration>)
       if (sideDecl === 'left') {
         if (t.isObjectProperty(parentPath)) {
@@ -68,8 +74,10 @@ export default {
 
         return
       }
-    } else {
-      console.log('unknown statement type', statementParent.node.type)
+
+      return
     }
+
+    console.log('unknown statement type', statementParent.node.type)
   },
 }
