@@ -1,9 +1,8 @@
 import { testWithOutput } from './helpers'
 import test from 'ava'
 
-test('babel-plugin-remove-unused-vars', async function(t) {
-  await testWithOutput({
-    test: t,
+const tests = [
+  {
     code: `
       import test from 'x';
       import anotherTest from 'y';
@@ -13,10 +12,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       import test from 'x';
       console.log(test());
     `,
-  })
-
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import test from 'x';
       import anotherTest from 'y';
@@ -26,10 +23,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       import anotherTest from 'y';
       console.log(anotherTest());
     `,
-  })
-
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import test from 'x';
       import anotherTest from 'y';
@@ -40,10 +35,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       import anotherTest from 'y';
       console.log(anotherTest());
     `,
-  })
-
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import test from 'x';
       import anotherTest from 'y';
@@ -63,11 +56,9 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       } = test();
       x();
       console.log(anotherTest());
-    `,
-  })
-
-  await testWithOutput({
-    test: t,
+      `,
+  },
+  {
     code: `
       import * as test from 'x';
       import anotherTest from 'y';
@@ -77,9 +68,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       import * as test from 'x';
       console.log(test());
     `,
-  })
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import * as test from 'x';
       import { x, y, z } from 'y';
@@ -92,9 +82,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       y();
       console.log(test());
     `,
-  })
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import * as test from 'x';
       import { x, y, z } from 'y';
@@ -111,9 +100,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       import * as test from 'x';
       console.log(test());
     `,
-  })
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       import * as test from 'x';
       import { x, y, z } from 'y';
@@ -140,10 +128,8 @@ test('babel-plugin-remove-unused-vars', async function(t) {
       m();
       console.log(test());
     `,
-  })
-
-  await testWithOutput({
-    test: t,
+  },
+  {
     code: `
       let y;
 
@@ -158,5 +144,22 @@ test('babel-plugin-remove-unused-vars', async function(t) {
 
       x();
     `,
+  },
+  {
+    code: `
+      import { x, y, z } from 'a';
+      import * as j from 'b';
+    `,
+    output: '',
+  },
+]
+
+tests.forEach(({ code, output }, index) => {
+  test(`babel-plugin-remove-unused-vars-#${index + 1}`, async function(t) {
+    await testWithOutput({
+      test: t,
+      code,
+      output,
+    })
   })
 })
