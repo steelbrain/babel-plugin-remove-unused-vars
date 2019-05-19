@@ -30,6 +30,8 @@ export default {
       if (t.isCallExpression(expressionPath)) {
         // - mark as used
         return
+      } else if (t.isAssignmentExpression(expressionPath)) {
+        //
       } else {
         console.log('unknown expression statement type', expressionPath.node.type)
       }
@@ -48,6 +50,11 @@ export default {
               }
             }
           }
+        } else if (t.isVariableDeclarator(parentPath)) {
+          if (!isNodeUsed(path.node)) {
+            statementParent.remove()
+          }
+        } else {
         }
 
         return

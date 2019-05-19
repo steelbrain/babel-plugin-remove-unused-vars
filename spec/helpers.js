@@ -41,18 +41,18 @@ async function testWithOutput({ code, output }) {
 //   `,
 // })
 
-testWithOutput({
-  code: `
-    import test from 'x';
-    import anotherTest from 'y';
-    const {x,y,z} = test();
-    console.log(anotherTest());
-  `,
-  output: `
-    import anotherTest from 'y';
-    console.log(anotherTest());
-  `,
-})
+// testWithOutput({
+//   code: `
+//     import test from 'x';
+//     import anotherTest from 'y';
+//     const {x,y,z} = test();
+//     console.log(anotherTest());
+//   `,
+//   output: `
+//     import anotherTest from 'y';
+//     console.log(anotherTest());
+//   `,
+// })
 
 // testWithOutput({
 //   code: `
@@ -166,3 +166,13 @@ testWithOutput({
 //     x();
 //   `,
 // })
+
+testWithOutput({
+  code: `
+    let x = false
+    if (true) {
+      x = true
+    }
+  `,
+  output: 'if (true) {}',
+})

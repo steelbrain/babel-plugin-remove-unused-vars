@@ -1,4 +1,4 @@
-import { Node, VariableDeclaration, ObjectProperty, Identifier } from '@babel/types'
+import { Node, VariableDeclaration, ObjectProperty, Identifier, AssignmentExpression } from '@babel/types'
 import { NodePath } from '@babel/traverse'
 
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
@@ -82,6 +82,24 @@ export function getSideInObjectProperty(child: NodePath<Node>, parent: NodePath<
       return 'left'
     }
     if (currentItem.node === parent.node.value) {
+      return 'right'
+    }
+    currentItem = currentItem.parentPath
+  } while (currentItem)
+
+  return null
+}
+
+export function getSideInAssignmentExpression(
+  child: NodePath<Node>,
+  parent: NodePath<AssignmentExpression>,
+): 'left' | 'right' | null {
+  let currentItem = child
+  do {
+    if (currentItem.node === parent.node.left) {
+      return 'left'
+    }
+    if (currentItem.node === parent.node.right) {
       return 'right'
     }
     currentItem = currentItem.parentPath

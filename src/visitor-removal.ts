@@ -1,6 +1,6 @@
 import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
-import { isNodeBindingUsed, getSideInDeclaration, getSideInObjectProperty } from './common'
+import { isNodeBindingUsed, getSideInDeclaration, getSideInObjectProperty, getSideInAssignmentExpression } from './common'
 
 export default {
   Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
@@ -25,6 +25,13 @@ export default {
       if (t.isCallExpression(expressionPath)) {
         // - mark as used
         return
+      } else if (t.isAssignmentExpression(expressionPath)) {
+        const sideAse = getSideInAssignmentExpression(path, expressionPath as NodePath<babelTypes.AssignmentExpression>)
+        if (sideAse === 'left') {
+          if (!isNodeBindingUsed(path)) {
+            statementParent.remove()
+          }
+        }
       } else {
         console.log('unknown expression statement type', expressionPath.node.type)
       }
