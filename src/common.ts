@@ -4,6 +4,22 @@ import { NodePath } from '@babel/traverse'
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
 export const SYM_IDENTIFIER_TRACKED = Symbol('IDENTIFIER_TRACKED')
 
+export function getStatementParent(path: NodePath<Node>) {
+  do {
+    if (!path.parentPath || (Array.isArray(path.container) && path.isStatement())) {
+      break
+    } else {
+      path = path.parentPath
+    }
+  } while (path)
+
+  if (path && (path.isProgram() || path.isFile())) {
+    return null
+  }
+
+  return path
+}
+
 export function markNodeAsTracked(node: Node) {
   node[SYM_IDENTIFIER_TRACKED] = true
   node[SYM_IDENTIFIER_USED] = false
@@ -26,6 +42,17 @@ export function markNodeAsUsed(path: NodePath<Identifier>) {
     }
     binding[SYM_IDENTIFIER_USED] = true
   }
+}
+
+export function isNodeBindingUsed(path: NodePath<Identifier>) {
+  const binding = path.scope.getBindingIdentifier(path.node.name)
+  if (binding) {
+    if (!isNodeTracked(binding)) {
+      return true
+    }
+    return binding[SYM_IDENTIFIER_USED]
+  }
+  return true
 }
 
 export function getSideInDeclaration(child: NodePath<Node>, parent: NodePath<VariableDeclaration>): 'left' | 'right' | null {
