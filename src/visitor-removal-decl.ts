@@ -67,6 +67,7 @@ export default {
             if (!isNodeUsed(path.node)) {
               parentPath.remove()
 
+              // TODO: Remove props recursively here.
               if (!(parentObjPropPath.parentPath.node as babelTypes.ObjectPattern).properties.length) {
                 parentObjPropPath.parentPath.parentPath.remove()
               }
