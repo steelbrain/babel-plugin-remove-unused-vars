@@ -18,8 +18,6 @@ export default {
         // - mark as tracked
       }
 
-      console.log('parentPath', parentPath.node)
-
       return
     }
 
@@ -50,11 +48,6 @@ export default {
           if (objPropSide === 'right') {
             // is a decl
             // - mark as tracked
-          } else if (
-            objPropSide === 'left' &&
-            parentObjPropPath.node.key.name !== (parentObjPropPath.node.value as babelTypes.Identifier).name
-          ) {
-            console.log('diff from same')
           }
         }
       }

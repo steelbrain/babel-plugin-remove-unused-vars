@@ -1,6 +1,12 @@
 import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
-import { isNodeUsed, getStatementParent, getSideInDeclaration, getSideInObjectProperty } from './common'
+import {
+  isNodeUsed,
+  getStatementParent,
+  getSideInDeclaration,
+  getSideInObjectProperty,
+  getSideInImportSpecifier,
+} from './common'
 
 export default {
   Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
@@ -22,9 +28,18 @@ export default {
           statementParent.remove()
         }
         return
+      } else {
+        const sideIms = getSideInImportSpecifier(path)
+        if (sideIms === 'right') {
+          if (!isNodeUsed(path.node)) {
+            parentPath.remove()
+            if (!(statementParent.node as babelTypes.ImportDeclaration).specifiers.length) {
+              statementParent.remove()
+            }
+          }
+        }
       }
 
-      console.log('parentPath', parentPath.node)
       return
     }
 

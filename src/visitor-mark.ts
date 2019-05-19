@@ -5,6 +5,7 @@ import {
   markNodeAsUsed,
   getSideInDeclaration,
   getSideInObjectProperty,
+  getSideInImportSpecifier,
   getSideInAssignmentExpression,
 } from './common'
 
@@ -22,9 +23,12 @@ export default {
       // Handle recursive destructuring here
       if (t.isImportDefaultSpecifier(parentPath)) {
         markNodeAsTracked(path.node)
+      } else {
+        const sideIms = getSideInImportSpecifier(path)
+        if (sideIms === 'right') {
+          markNodeAsTracked(path.node)
+        }
       }
-
-      console.log('parentPath', parentPath.node)
 
       return
     }
@@ -54,11 +58,6 @@ export default {
           if (objPropSide === 'right') {
             // is a decl
             markNodeAsTracked(path.node)
-          } else if (
-            objPropSide === 'left' &&
-            parentObjPropPath.node.key.name !== (parentObjPropPath.node.value as babelTypes.Identifier).name
-          ) {
-            console.log('diff from same')
           }
         } else if (t.isVariableDeclarator(parentPath)) {
           markNodeAsTracked(path.node)
