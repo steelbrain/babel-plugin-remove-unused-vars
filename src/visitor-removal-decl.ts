@@ -22,7 +22,6 @@ export default {
     }
 
     if (t.isImportDeclaration(statementParent)) {
-      // Handle recursive destructuring here
       if (t.isImportDefaultSpecifier(parentPath)) {
         if (!isNodeUsed(path.node)) {
           statementParent.remove()
@@ -33,6 +32,7 @@ export default {
         if (sideIms === 'right') {
           if (!isNodeUsed(path.node)) {
             parentPath.remove()
+
             if (!(statementParent.node as babelTypes.ImportDeclaration).specifiers.length) {
               statementParent.remove()
             }
@@ -67,9 +67,26 @@ export default {
             if (!isNodeUsed(path.node)) {
               parentPath.remove()
 
-              // TODO: Remove props recursively here.
-              if (!(parentObjPropPath.parentPath.node as babelTypes.ObjectPattern).properties.length) {
-                parentObjPropPath.parentPath.parentPath.remove()
+              let currentPath: NodePath<babelTypes.Node> = parentObjPropPath.parentPath
+              for (;;) {
+                const currentNode = currentPath.node as babelTypes.ObjectPattern
+                if (currentNode.properties.length === 0) {
+                  if (t.isObjectProperty(currentPath.parentPath)) {
+                    const grandpaObject = currentPath.parentPath.parentPath.node as babelTypes.ObjectPattern
+                    grandpaObject.properties = grandpaObject.properties.filter(item => item !== currentPath.parentPath.node)
+
+                    currentPath = currentPath.parentPath.parentPath
+                  } else {
+                    if (t.isVariableDeclarator(currentPath.parentPath)) {
+                      // No properties and parent path is root. remove the entire thing.
+                      statementParent.remove()
+                    }
+
+                    break
+                  }
+                } else {
+                  break
+                }
               }
             }
           }
