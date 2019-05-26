@@ -4,9 +4,9 @@ import { NodePath } from '@babel/traverse'
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
 export const SYM_IDENTIFIER_TRACKED = Symbol('IDENTIFIER_TRACKED')
 
-export function getStatementParent(path: NodePath<Node>) {
+export function getParentFunctionOrStatement(path: NodePath<Node>) {
   do {
-    if (!path.parentPath || (Array.isArray(path.container) && path.isStatement())) {
+    if (!path.parentPath || (Array.isArray(path.container) && path.isStatement()) || path.isFunction()) {
       break
     } else {
       path = path.parentPath
@@ -37,7 +37,7 @@ export function markNodeAsUsed(path: NodePath<Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
-      console.log('node was NOT tracked')
+      console.log('node was NOT tracked', binding)
       return
     }
     binding[SYM_IDENTIFIER_USED] = true

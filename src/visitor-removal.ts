@@ -66,10 +66,10 @@ export default {
     }
 
     if (t.isFunction(statementParent)) {
-      // Identifier is a parameter
+      // Identifier is a parameter or in function body
 
       if (t.isFunction(parentPath)) {
-        // We have a simple identifier
+        // We have a simple param identifier
         // - mark as tracked
       } else if (t.isObjectProperty(parentPath)) {
         const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
@@ -82,7 +82,10 @@ export default {
           // - mark as tracked
         } else if (sideAse === 'left') {
           if (!isNodeBindingUsed(path)) {
-            if (t.isAssignmentExpression((parentPath.node as babelTypes.AssignmentExpression).right)) {
+            if (
+              t.isAssignmentExpression(parentPath.parentPath) ||
+              t.isAssignmentExpression((parentPath.node as babelTypes.AssignmentExpression).right)
+            ) {
               parentPath.replaceWith((parentPath.node as babelTypes.AssignmentExpression).right)
             } else {
               parentPath.remove()

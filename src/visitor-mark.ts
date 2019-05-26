@@ -78,10 +78,10 @@ export default {
     }
 
     if (t.isFunction(statementParent)) {
-      // Identifier is a parameter
+      // Identifier is a parameter or in function body
 
       if (t.isFunction(parentPath)) {
-        // We have a simple identifier
+        // We have a simple param identifier
         markNodeAsTracked(path.node)
       } else if (t.isObjectProperty(parentPath)) {
         const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)

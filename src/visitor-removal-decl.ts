@@ -102,7 +102,7 @@ export default {
     }
 
     if (t.isFunction(statementParent)) {
-      // Identifier is a parameter
+      // Identifier is a parameter or in function body
       return
     }
 
