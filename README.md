@@ -12,7 +12,7 @@ npm install --save-dev babel-plugin-remove-unused-vars
 ### Usage
 
 ```
-npx babel --no-babelrc --plugins babel-plugin-remove-unused-vars --out-dir src-2/ src/
+npx babel --no-babelrc --retain-lines --plugins babel-plugin-remove-unused-vars --out-dir src-2/ src/
 ```
 
 This plugin is intended for source-to-source conversions. You can then replace original source
