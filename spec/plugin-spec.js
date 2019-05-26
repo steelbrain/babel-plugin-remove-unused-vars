@@ -187,10 +187,13 @@ const tests = [
 
       const k = ({
         l: m,
-      }) => j = m.k;
+        o: p,
+        q: { r: u }
+      }) => j = m.k + u;
 
       x();
       k();
+      j();
     `,
     output: `
       let y;
@@ -202,6 +205,24 @@ const tests = [
   },
   {
     code: `
+      let j;
+
+      const k = ({
+        l: m,
+      }) => j = m.k;
+
+      x();
+      k();
+    `,
+    output: `
+      const k = () => {};
+
+      x();
+      k();
+    `,
+  },
+  {
+    code: `
       import { x, y, z } from 'a';
       import * as j from 'b';
     `,
@@ -209,7 +230,7 @@ const tests = [
   },
 ]
 
-;[tests[9]].forEach(({ code, output }, index) => {
+;[tests[tests.length - 1 - 1]].forEach(({ code, output }, index) => {
   test(`babel-plugin-remove-unused-vars-#${index + 1}`, async function(t) {
     await testWithOutput({
       test: t,
