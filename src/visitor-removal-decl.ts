@@ -93,8 +93,6 @@ export default {
         return
       } else if (t.isAssignmentExpression(expressionPath)) {
         //
-      } else {
-        console.log('unknown expression statement type', expressionPath.node.type)
       }
 
       return
@@ -140,7 +138,5 @@ export default {
       }
       return
     }
-
-    console.log('unknown statement type', statementParent.node.type)
   },
 }

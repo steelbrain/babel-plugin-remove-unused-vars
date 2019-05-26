@@ -46,8 +46,6 @@ export default {
         if (sideAse === 'right') {
           markNodeAsUsed(path)
         }
-      } else {
-        console.log('unknown expression statement type', expressionPath.node.type)
       }
 
       return
@@ -102,7 +100,5 @@ export default {
 
       return
     }
-
-    console.log('unknown statement type', statementParent.node.type)
   },
 }

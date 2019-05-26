@@ -37,7 +37,6 @@ export function markNodeAsUsed(path: NodePath<Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
-      console.log('node was NOT tracked', binding)
       return
     }
     binding[SYM_IDENTIFIER_USED] = true
