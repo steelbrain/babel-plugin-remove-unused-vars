@@ -1,6 +1,12 @@
 import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
-import { isNodeBindingUsed, getSideInDeclaration, getSideInObjectProperty, getSideInAssignmentExpression } from './common'
+import {
+  isNodeBindingUsed,
+  getSideInDeclaration,
+  getSideInObjectProperty,
+  getParentFunctionOrStatement,
+  getSideInAssignmentExpression,
+} from './common'
 
 export default {
   Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
@@ -10,7 +16,7 @@ export default {
       return
     }
 
-    const statementParent = path.getStatementParent()
+    const statementParent = getParentFunctionOrStatement(path)
 
     if (t.isImportDeclaration(statementParent)) {
       // Handle recursive destructuring here
@@ -29,7 +35,11 @@ export default {
         const sideAse = getSideInAssignmentExpression(path, expressionPath as NodePath<babelTypes.AssignmentExpression>)
         if (sideAse === 'left') {
           if (!isNodeBindingUsed(path)) {
-            statementParent.remove()
+            if (t.isAssignmentExpression((expressionPath.node as babelTypes.AssignmentExpression).right)) {
+              expressionPath.replaceWith((expressionPath.node as babelTypes.AssignmentExpression).right)
+            } else {
+              expressionPath.remove()
+            }
           }
         }
       } else {
@@ -52,6 +62,35 @@ export default {
         }
       }
       // Ignore right here, remove the entire statement if left is unused
+      return
+    }
+
+    if (t.isFunction(statementParent)) {
+      // Identifier is a parameter
+
+      if (t.isFunction(parentPath)) {
+        // We have a simple identifier
+        // - mark as tracked
+      } else if (t.isObjectProperty(parentPath)) {
+        const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
+        if (objPropSide === 'right') {
+          // - mark as tracked
+        }
+      } else if (t.isAssignmentExpression(parentPath)) {
+        const sideAse = getSideInAssignmentExpression(path, parentPath as NodePath<babelTypes.AssignmentExpression>)
+        if (sideAse === 'right') {
+          // - mark as tracked
+        } else if (sideAse === 'left') {
+          if (!isNodeBindingUsed(path)) {
+            if (t.isAssignmentExpression((parentPath.node as babelTypes.AssignmentExpression).right)) {
+              parentPath.replaceWith((parentPath.node as babelTypes.AssignmentExpression).right)
+            } else {
+              parentPath.remove()
+            }
+          }
+        }
+      }
+
       return
     }
 

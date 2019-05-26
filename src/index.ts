@@ -3,7 +3,7 @@ import visitorMark from './visitor-mark'
 import visitorRemoval from './visitor-removal'
 import visitorRemovalDecl from './visitor-removal-decl'
 
-const DEFAULT_ITERATIONS = 5
+const DEFAULT_ITERATIONS = 1
 
 export default function({ types: t }, { iterations = null } = {}) {
   const iterationsToRun = parseInt(iterations, 10) || DEFAULT_ITERATIONS

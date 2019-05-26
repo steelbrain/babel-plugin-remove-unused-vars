@@ -2,10 +2,10 @@ import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
 import {
   isNodeUsed,
-  getStatementParent,
   getSideInDeclaration,
   getSideInObjectProperty,
   getSideInImportSpecifier,
+  getParentFunctionOrStatement,
 } from './common'
 
 export default {
@@ -16,7 +16,7 @@ export default {
       return
     }
 
-    const statementParent = getStatementParent(path)
+    const statementParent = getParentFunctionOrStatement(path)
     if (!statementParent) {
       return
     }
@@ -98,6 +98,11 @@ export default {
         }
       }
       // Ignore right side here, remove the entire statement if left is unused
+      return
+    }
+
+    if (t.isFunction(statementParent)) {
+      // Identifier is a parameter
       return
     }
 

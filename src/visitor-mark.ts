@@ -6,6 +6,7 @@ import {
   getSideInDeclaration,
   getSideInObjectProperty,
   getSideInImportSpecifier,
+  getParentFunctionOrStatement,
   getSideInAssignmentExpression,
 } from './common'
 
@@ -17,7 +18,7 @@ export default {
       return
     }
 
-    const statementParent = path.getStatementParent()
+    const statementParent = getParentFunctionOrStatement(path)
 
     if (t.isImportDeclaration(statementParent)) {
       // Handle recursive destructuring here
@@ -53,8 +54,7 @@ export default {
       const sideDecl = getSideInDeclaration(path, statementParent as NodePath<babelTypes.VariableDeclaration>)
       if (sideDecl === 'left') {
         if (t.isObjectProperty(parentPath)) {
-          const parentObjPropPath = parentPath as NodePath<babelTypes.ObjectProperty>
-          const objPropSide = getSideInObjectProperty(path, parentObjPropPath)
+          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
           if (objPropSide === 'right') {
             // is a decl
             markNodeAsTracked(path.node)
@@ -72,6 +72,29 @@ export default {
         markNodeAsUsed(path)
 
         return
+      }
+
+      return
+    }
+
+    if (t.isFunction(statementParent)) {
+      // Identifier is a parameter
+
+      if (t.isFunction(parentPath)) {
+        // We have a simple identifier
+        markNodeAsTracked(path.node)
+      } else if (t.isObjectProperty(parentPath)) {
+        const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
+        if (objPropSide === 'right') {
+          markNodeAsTracked(path.node)
+        }
+      } else if (t.isAssignmentExpression(parentPath)) {
+        const sideAse = getSideInAssignmentExpression(path, parentPath as NodePath<babelTypes.AssignmentExpression>)
+        if (sideAse === 'right') {
+          markNodeAsUsed(path)
+        }
+      } else {
+        console.log(path.node.name, parentPath.node)
       }
 
       return
