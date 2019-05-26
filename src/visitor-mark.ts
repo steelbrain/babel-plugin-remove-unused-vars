@@ -15,6 +15,9 @@ export default {
     const parentPath = path.parentPath
 
     if (t.isMemberExpression(parentPath)) {
+      if (path.node === (parentPath.node as babelTypes.MemberExpression).object) {
+        markNodeAsUsed(path)
+      }
       return
     }
 
@@ -94,7 +97,7 @@ export default {
           markNodeAsUsed(path)
         }
       } else {
-        console.log(path.node.name, parentPath.node)
+        markNodeAsUsed(path)
       }
 
       return

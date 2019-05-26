@@ -8,6 +8,5 @@ export async function testWithOutput({ test, code, output }) {
     sourceMaps: false,
   })
 
-  console.log('output', transformed.code)
   test.is(coolTrim(output), transformed.code)
 }
