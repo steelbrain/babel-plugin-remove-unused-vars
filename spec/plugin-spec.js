@@ -233,6 +233,38 @@ const tests = [
     `,
     output: '',
   },
+  {
+    code: `
+      function x(j, k) {
+        k();
+      }
+
+      x();
+    `,
+    output: `
+      function x(j, k) {
+        k();
+      }
+
+      x();
+    `,
+  },
+  {
+    code: `
+      function x(j, k) {
+        j();
+      }
+
+      x();
+    `,
+    output: `
+      function x(j) {
+        j();
+      }
+
+      x();
+    `,
+  },
 ]
 
 tests.forEach(({ code, output }, index) => {

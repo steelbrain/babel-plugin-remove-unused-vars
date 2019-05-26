@@ -120,6 +120,16 @@ export default {
 
     if (t.isFunction(statementParent)) {
       // Identifier is a parameter or in function body
+
+      if (t.isFunction(parentPath)) {
+        // We have a simple param identifier
+        // Only remove if last param
+        const parentNode = parentPath.node as babelTypes.Function
+        if (parentNode.params[parentNode.params.length - 1] === path.node && !isNodeUsed(path.node)) {
+          path.remove()
+        }
+      }
+
       if (t.isObjectProperty(parentPath)) {
         const paramParent = parentPath.find(
           path =>
