@@ -324,6 +324,32 @@ const tests = [
       x();
     `,
   },
+  {
+    code: `
+      export default {
+        x() {
+          const params = questionLine.params || {};
+          const routineId = params.routineId;
+          const stageId = params.stageId;
+          const parser = (parsers[routineId] || {})[stageId];
+          return parser;
+        }
+
+      };
+    `,
+    output: `
+      export default {
+        x() {
+          const params = questionLine.params || {};
+          const routineId = params.routineId;
+          const stageId = params.stageId;
+          const parser = (parsers[routineId] || {})[stageId];
+          return parser;
+        }
+
+      };
+    `,
+  },
 ]
 
 tests.forEach(({ code, output }, index) => {

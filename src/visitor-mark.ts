@@ -20,7 +20,10 @@ export default {
 
     if (t.isMemberExpression(parentPath)) {
       // Only process when left-most var in members
-      if (path.node !== (parentPath.node as babelTypes.MemberExpression).object) {
+      if (
+        !(parentPath.node as babelTypes.MemberExpression).computed &&
+        path.node !== (parentPath.node as babelTypes.MemberExpression).object
+      ) {
         return
       }
     }
