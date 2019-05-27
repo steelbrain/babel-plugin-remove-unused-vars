@@ -1,3 +1,7 @@
+### v2.1.0
+
+- Improve handling of member expressions in assignment expressions
+
 ### v2.0.0
 
 - Rewrite, behavior differs and more cases are handled now

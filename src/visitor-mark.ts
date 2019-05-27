@@ -15,10 +15,10 @@ export default {
     const parentPath = path.parentPath
 
     if (t.isMemberExpression(parentPath)) {
-      if (path.node === (parentPath.node as babelTypes.MemberExpression).object) {
-        markNodeAsUsed(path)
+      // Only process when left-most var in members
+      if (path.node !== (parentPath.node as babelTypes.MemberExpression).object) {
+        return
       }
-      return
     }
 
     const statementParent = getParentFunctionOrStatement(path)

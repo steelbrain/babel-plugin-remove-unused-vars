@@ -210,6 +210,33 @@ const tests = [
   },
   {
     code: `
+      let j = {};
+
+      const k = ({
+        l: m,
+        o: p,
+        q: { r: u }
+      }) => j.x = m.k + u;
+
+      k();
+      j();
+    `,
+    output: `
+      let j = {};
+
+      const k = ({
+        l: m,
+        q: {
+          r: u
+        }
+      }) => j.x = m.k + u;
+
+      k();
+      j();
+    `,
+  },
+  {
+    code: `
       let j;
 
       const k = ({
