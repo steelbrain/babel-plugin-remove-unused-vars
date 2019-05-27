@@ -328,11 +328,11 @@ const tests = [
     code: `
       export default {
         x() {
-          const params = questionLine.params || {};
-          const routineId = params.routineId;
-          const stageId = params.stageId;
-          const parser = (parsers[routineId] || {})[stageId];
-          return parser;
+          const a = f.g || {};
+          const b = a.b;
+          const c = a.c;
+          const d = (e[b] || {})[c];
+          return d;
         }
 
       };
@@ -340,14 +340,42 @@ const tests = [
     output: `
       export default {
         x() {
-          const params = questionLine.params || {};
-          const routineId = params.routineId;
-          const stageId = params.stageId;
-          const parser = (parsers[routineId] || {})[stageId];
-          return parser;
+          const a = f.g || {};
+          const b = a.b;
+          const c = a.c;
+          const d = (e[b] || {})[c];
+          return d;
         }
 
       };
+    `,
+  },
+  {
+    code: `
+      async function x() {
+        const something = awesome();
+
+        try {
+          await something.another();
+        } catch (error) {
+          console.error(a)
+        }
+      }
+
+      x();
+    `,
+    output: `
+      async function x() {
+        const something = awesome();
+
+        try {
+          await something.another();
+        } catch (error) {
+          console.error(a);
+        }
+      }
+
+      x();
     `,
   },
 ]

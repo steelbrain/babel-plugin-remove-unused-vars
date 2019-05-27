@@ -2,6 +2,7 @@
 
 - Fix support for JSX Elements
 - Fix for variable object access
+- Fix variable tracking in await/try-catch statements
 - Handle unused destructured parameters in functions properly
 - Fix handling of some function parameters/body variables
 

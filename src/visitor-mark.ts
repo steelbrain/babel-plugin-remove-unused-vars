@@ -53,6 +53,8 @@ export default {
         if (sideAse === 'right') {
           markNodeAsUsed(path)
         }
+      } else {
+        markNodeAsUsed(path)
       }
 
       return
