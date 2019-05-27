@@ -1,3 +1,7 @@
+### v2.1.1
+
+- Handle unused destructured parameters in functions properly
+
 ### v2.1.0
 
 - Improve handling of member expressions in assignment expressions

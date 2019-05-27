@@ -255,6 +255,28 @@ const tests = [
   },
   {
     code: `
+      let j;
+
+      const k = ({
+        l: m,
+      }, b) => {
+        console.log('hi', b)
+      };
+
+      x();
+      k();
+    `,
+    output: `
+      const k = (_unusedParam, b) => {
+        console.log('hi', b);
+      };
+
+      x();
+      k();
+    `,
+  },
+  {
+    code: `
       import { x, y, z } from 'a';
       import * as j from 'b';
     `,

@@ -11,11 +11,11 @@ import {
 function removeObjectPropertyDecl({
   path,
   parentPath,
-  statementParent,
+  remove,
 }: {
   path: NodePath<babelTypes.Identifier>
   parentPath: NodePath<babelTypes.Node>
-  statementParent: NodePath<babelTypes.Node>
+  remove: () => void
 }) {
   const parentObjPropPath = parentPath as NodePath<babelTypes.ObjectProperty>
   const objPropSide = getSideInObjectProperty(path, parentObjPropPath)
@@ -35,10 +35,10 @@ function removeObjectPropertyDecl({
           } else {
             if (currentPath.parentPath.isVariableDeclarator()) {
               // No properties and parent path is root. remove the entire thing.
-              statementParent.remove()
+              remove()
             } else if (currentPath.parentPath.isFunction()) {
               // ObjectPattern is as a parameter in a function
-              statementParent.remove()
+              remove()
             }
 
             break
@@ -105,7 +105,9 @@ export default {
           removeObjectPropertyDecl({
             path,
             parentPath,
-            statementParent,
+            remove() {
+              statementParent.remove()
+            },
           })
         } else if (t.isVariableDeclarator(parentPath)) {
           if (!isNodeUsed(path.node)) {
@@ -131,19 +133,25 @@ export default {
       }
 
       if (t.isObjectProperty(parentPath)) {
-        const paramParent = parentPath.find(
-          path =>
-            // We found an object pattern and it's a direct discendent of this function aka the param.
-            (path.isObjectPattern() && path.parentPath.node === statementParent.node) ||
-            // We reached the end of the function decl
-            path.node === statementParent.node,
-        )
-        if (paramParent && paramParent.isObjectPattern()) {
-          removeObjectPropertyDecl({
-            path,
-            parentPath,
-            statementParent: paramParent,
-          })
+        const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
+        if (objPropSide === 'right' && !isNodeUsed(path.node)) {
+          const paramParent = parentPath.find(
+            path =>
+              // We found an object pattern and it's a direct discendent of this function aka the param.
+              (path.isObjectPattern() && path.parentPath.node === statementParent.node) ||
+              // We reached the end of the function decl
+              path.node === statementParent.node,
+          )
+          if (paramParent && paramParent.isObjectPattern()) {
+            console.log('removing object pattern', objPropSide, path.node.name)
+            removeObjectPropertyDecl({
+              path,
+              parentPath,
+              remove() {
+                paramParent.replaceWith(path.scope.generateUidIdentifier('unusedParam'))
+              },
+            })
+          }
         }
       }
       return
