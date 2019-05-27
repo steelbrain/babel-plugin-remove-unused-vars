@@ -47,7 +47,7 @@ export function isNodeBindingUsed(path: NodePath<babelTypes.Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
-      console.log('node is not tracked', binding)
+      // console.log('node is not tracked', binding)
       return true
     }
     return binding[SYM_IDENTIFIER_USED]
@@ -98,6 +98,11 @@ export function getSideInObjectProperty(
   } while (currentItem)
 
   return null
+}
+
+export function isObjectPropertyDeclaration(child: NodePath<babelTypes.Node>, parent: NodePath<babelTypes.ObjectProperty>) {
+  const side = getSideInObjectProperty(child, parent)
+  return side === 'right' || (side === 'left' && babelTypes.isAssignmentPattern(parent.node.value))
 }
 
 export function getSideInAssignmentExpression(

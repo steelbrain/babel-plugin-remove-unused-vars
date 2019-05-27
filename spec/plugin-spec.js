@@ -378,6 +378,38 @@ const tests = [
       x();
     `,
   },
+  {
+    code: `
+      async function x({
+        anotherThing = null
+      }) {
+        const something = awesome();
+
+        try {
+          await something.another(anotherThing);
+        } catch (error) {
+          console.error(a)
+        }
+      }
+
+      x();
+    `,
+    output: `
+      async function x({
+        anotherThing = null
+      }) {
+        const something = awesome();
+
+        try {
+          await something.another(anotherThing);
+        } catch (error) {
+          console.error(a);
+        }
+      }
+
+      x();
+    `,
+  },
 ]
 
 tests.forEach(({ code, output }, index) => {

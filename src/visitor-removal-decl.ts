@@ -52,10 +52,10 @@ function removeObjectPropertyDecl({
 }
 
 export default {
-  Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
+  Identifier(path: NodePath<babelTypes.Identifier>) {
     const parentPath = path.parentPath
 
-    if (t.isMemberExpression(parentPath)) {
+    if (babelTypes.isMemberExpression(parentPath)) {
       return
     }
 
@@ -64,8 +64,8 @@ export default {
       return
     }
 
-    if (t.isImportDeclaration(statementParent)) {
-      if (t.isImportDefaultSpecifier(parentPath)) {
+    if (babelTypes.isImportDeclaration(statementParent)) {
+      if (babelTypes.isImportDefaultSpecifier(parentPath)) {
         if (!isNodeUsed(path.node)) {
           statementParent.remove()
         }
@@ -86,22 +86,22 @@ export default {
       return
     }
 
-    if (t.isExpressionStatement(statementParent)) {
+    if (babelTypes.isExpressionStatement(statementParent)) {
       const expressionPath = statementParent.get('expression') as NodePath<babelTypes.Node> | null
-      if (t.isCallExpression(expressionPath)) {
+      if (babelTypes.isCallExpression(expressionPath)) {
         // - mark as used
         return
-      } else if (t.isAssignmentExpression(expressionPath)) {
+      } else if (babelTypes.isAssignmentExpression(expressionPath)) {
         //
       }
 
       return
     }
 
-    if (t.isVariableDeclaration(statementParent)) {
+    if (babelTypes.isVariableDeclaration(statementParent)) {
       const sideDecl = getSideInDeclaration(path, statementParent as NodePath<babelTypes.VariableDeclaration>)
       if (sideDecl === 'left') {
-        if (t.isObjectProperty(parentPath)) {
+        if (babelTypes.isObjectProperty(parentPath)) {
           removeObjectPropertyDecl({
             path,
             parentPath,
@@ -109,7 +109,7 @@ export default {
               statementParent.remove()
             },
           })
-        } else if (t.isVariableDeclarator(parentPath)) {
+        } else if (babelTypes.isVariableDeclarator(parentPath)) {
           if (!isNodeUsed(path.node)) {
             statementParent.remove()
           }
@@ -120,10 +120,10 @@ export default {
       return
     }
 
-    if (t.isFunction(statementParent)) {
+    if (babelTypes.isFunction(statementParent)) {
       // Identifier is a parameter or in function body
 
-      if (t.isFunction(parentPath)) {
+      if (babelTypes.isFunction(parentPath)) {
         // We have a simple param identifier
         // Only remove if last param
         const parentNode = parentPath.node as babelTypes.Function
@@ -132,7 +132,7 @@ export default {
         }
       }
 
-      if (t.isObjectProperty(parentPath)) {
+      if (babelTypes.isObjectProperty(parentPath)) {
         const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
         if (objPropSide === 'right' && !isNodeUsed(path.node)) {
           const paramParent = parentPath.find(

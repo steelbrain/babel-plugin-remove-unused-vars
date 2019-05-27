@@ -5,20 +5,20 @@ import {
   markNodeAsUsed,
   getSideInFunction,
   getSideInDeclaration,
-  getSideInObjectProperty,
   getSideInImportSpecifier,
   getParentFunctionOrStatement,
   getSideInAssignmentExpression,
+  isObjectPropertyDeclaration,
 } from './common'
 
 export default {
-  JSXIdentifier(path: NodePath<babelTypes.JSXIdentifier>, { t }: { t: typeof babelTypes }) {
+  JSXIdentifier(path: NodePath<babelTypes.JSXIdentifier>) {
     markNodeAsUsed(path)
   },
-  Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
+  Identifier(path: NodePath<babelTypes.Identifier>) {
     const parentPath = path.parentPath
 
-    if (t.isMemberExpression(parentPath)) {
+    if (babelTypes.isMemberExpression(parentPath)) {
       // Only process when left-most var in members
       if (
         !(parentPath.node as babelTypes.MemberExpression).computed &&
@@ -30,9 +30,9 @@ export default {
 
     const statementParent = getParentFunctionOrStatement(path)
 
-    if (t.isImportDeclaration(statementParent)) {
+    if (babelTypes.isImportDeclaration(statementParent)) {
       // Handle recursive destructuring here
-      if (t.isImportDefaultSpecifier(parentPath)) {
+      if (babelTypes.isImportDefaultSpecifier(parentPath)) {
         markNodeAsTracked(path.node)
       } else {
         const sideIms = getSideInImportSpecifier(path)
@@ -44,11 +44,11 @@ export default {
       return
     }
 
-    if (t.isExpressionStatement(statementParent)) {
+    if (babelTypes.isExpressionStatement(statementParent)) {
       const expressionPath = statementParent.get('expression') as NodePath<babelTypes.Node> | null
-      if (t.isCallExpression(expressionPath)) {
+      if (babelTypes.isCallExpression(expressionPath)) {
         markNodeAsUsed(path)
-      } else if (t.isAssignmentExpression(expressionPath)) {
+      } else if (babelTypes.isAssignmentExpression(expressionPath)) {
         const sideAse = getSideInAssignmentExpression(path, expressionPath as NodePath<babelTypes.AssignmentExpression>)
         if (sideAse === 'right') {
           markNodeAsUsed(path)
@@ -60,16 +60,15 @@ export default {
       return
     }
 
-    if (t.isVariableDeclaration(statementParent)) {
+    if (babelTypes.isVariableDeclaration(statementParent)) {
       const sideDecl = getSideInDeclaration(path, statementParent as NodePath<babelTypes.VariableDeclaration>)
       if (sideDecl === 'left') {
-        if (t.isObjectProperty(parentPath)) {
-          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
-          if (objPropSide === 'right') {
+        if (babelTypes.isObjectProperty(parentPath)) {
+          if (isObjectPropertyDeclaration(path, parentPath as NodePath<babelTypes.ObjectProperty>)) {
             // is a decl
             markNodeAsTracked(path.node)
           }
-        } else if (t.isVariableDeclarator(parentPath)) {
+        } else if (babelTypes.isVariableDeclarator(parentPath)) {
           markNodeAsTracked(path.node)
         } else {
           //
@@ -87,27 +86,25 @@ export default {
       return
     }
 
-    if (t.isFunction(statementParent)) {
+    if (babelTypes.isFunction(statementParent)) {
       // Identifier is a parameter or in function body
 
       const functionSide = getSideInFunction(path, statementParent as NodePath<babelTypes.Function>)
 
       if (functionSide === 'params') {
-        if (t.isFunction(parentPath)) {
+        if (babelTypes.isFunction(parentPath)) {
           markNodeAsTracked(path.node)
-        } else if (t.isObjectProperty(parentPath)) {
-          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
-          if (objPropSide === 'right') {
+        } else if (babelTypes.isObjectProperty(parentPath)) {
+          if (isObjectPropertyDeclaration(path, parentPath as NodePath<babelTypes.ObjectProperty>)) {
             markNodeAsTracked(path.node)
           }
         }
       } else if (functionSide === 'body') {
-        if (t.isObjectProperty(parentPath)) {
-          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
-          if (objPropSide === 'right') {
+        if (babelTypes.isObjectProperty(parentPath)) {
+          if (isObjectPropertyDeclaration(path, parentPath as NodePath<babelTypes.ObjectProperty>)) {
             markNodeAsUsed(path)
           }
-        } else if (t.isAssignmentExpression(parentPath)) {
+        } else if (babelTypes.isAssignmentExpression(parentPath)) {
           const sideAse = getSideInAssignmentExpression(path, parentPath as NodePath<babelTypes.AssignmentExpression>)
           if (sideAse === 'right') {
             markNodeAsUsed(path)
