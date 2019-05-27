@@ -75,6 +75,10 @@ export function getSideInDeclaration(child: NodePath<Node>, parent: NodePath<Var
 }
 
 export function getSideInObjectProperty(child: NodePath<Node>, parent: NodePath<ObjectProperty>): 'left' | 'right' | null {
+  if (!parent.node) {
+    return null
+  }
+
   let currentItem = child
   do {
     if (currentItem.node === parent.node.key) {
@@ -93,6 +97,10 @@ export function getSideInAssignmentExpression(
   child: NodePath<Node>,
   parent: NodePath<AssignmentExpression>,
 ): 'left' | 'right' | null {
+  if (!parent.node) {
+    return null
+  }
+
   let currentItem = child
   do {
     if (currentItem.node === parent.node.left) {

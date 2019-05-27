@@ -143,7 +143,6 @@ export default {
               path.node === statementParent.node,
           )
           if (paramParent && paramParent.isObjectPattern()) {
-            console.log('removing object pattern', objPropSide, path.node.name)
             removeObjectPropertyDecl({
               path,
               parentPath,
