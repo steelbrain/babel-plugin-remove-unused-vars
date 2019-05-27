@@ -3,6 +3,7 @@ import * as babelTypes from '@babel/types'
 import {
   markNodeAsTracked,
   markNodeAsUsed,
+  getSideInFunction,
   getSideInDeclaration,
   getSideInObjectProperty,
   getSideInImportSpecifier,
@@ -81,24 +82,36 @@ export default {
     if (t.isFunction(statementParent)) {
       // Identifier is a parameter or in function body
 
-      if (t.isFunction(parentPath)) {
-        // We have a simple param identifier
-        markNodeAsTracked(path.node)
-      } else if (t.isObjectProperty(parentPath)) {
-        const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
-        if (objPropSide === 'right') {
+      const functionSide = getSideInFunction(path, statementParent as NodePath<babelTypes.Function>)
+
+      if (functionSide === 'params') {
+        if (t.isFunction(parentPath)) {
           markNodeAsTracked(path.node)
+        } else if (t.isObjectProperty(parentPath)) {
+          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
+          if (objPropSide === 'right') {
+            markNodeAsTracked(path.node)
+          }
         }
-      } else if (t.isAssignmentExpression(parentPath)) {
-        const sideAse = getSideInAssignmentExpression(path, parentPath as NodePath<babelTypes.AssignmentExpression>)
-        if (sideAse === 'right') {
+      } else if (functionSide === 'body') {
+        if (t.isObjectProperty(parentPath)) {
+          const objPropSide = getSideInObjectProperty(path, parentPath as NodePath<babelTypes.ObjectProperty>)
+          if (objPropSide === 'right') {
+            markNodeAsUsed(path)
+          }
+        } else if (t.isAssignmentExpression(parentPath)) {
+          const sideAse = getSideInAssignmentExpression(path, parentPath as NodePath<babelTypes.AssignmentExpression>)
+          if (sideAse === 'right') {
+            markNodeAsUsed(path)
+          }
+        } else {
           markNodeAsUsed(path)
         }
-      } else {
-        markNodeAsUsed(path)
       }
 
       return
     }
+
+    markNodeAsUsed(path)
   },
 }

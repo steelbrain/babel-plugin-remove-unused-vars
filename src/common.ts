@@ -1,10 +1,10 @@
-import { Node, VariableDeclaration, ObjectProperty, Identifier, AssignmentExpression, ImportSpecifier } from '@babel/types'
+import * as babelTypes from '@babel/types'
 import { NodePath } from '@babel/traverse'
 
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
 export const SYM_IDENTIFIER_TRACKED = Symbol('IDENTIFIER_TRACKED')
 
-export function getParentFunctionOrStatement(path: NodePath<Node>) {
+export function getParentFunctionOrStatement(path: NodePath<babelTypes.Node>) {
   do {
     if (!path.parentPath || (Array.isArray(path.container) && path.isStatement()) || path.isFunction()) {
       break
@@ -20,20 +20,20 @@ export function getParentFunctionOrStatement(path: NodePath<Node>) {
   return path
 }
 
-export function markNodeAsTracked(node: Node) {
+export function markNodeAsTracked(node: babelTypes.Node) {
   node[SYM_IDENTIFIER_TRACKED] = true
   node[SYM_IDENTIFIER_USED] = false
 }
 
-export function isNodeTracked(node: Node) {
+export function isNodeTracked(node: babelTypes.Node) {
   return !!node[SYM_IDENTIFIER_TRACKED]
 }
 
-export function isNodeUsed(node: Node) {
+export function isNodeUsed(node: babelTypes.Node) {
   return !!node[SYM_IDENTIFIER_USED]
 }
 
-export function markNodeAsUsed(path: NodePath<Identifier>) {
+export function markNodeAsUsed(path: NodePath<babelTypes.Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
@@ -43,10 +43,11 @@ export function markNodeAsUsed(path: NodePath<Identifier>) {
   }
 }
 
-export function isNodeBindingUsed(path: NodePath<Identifier>) {
+export function isNodeBindingUsed(path: NodePath<babelTypes.Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
+      console.log('node is not tracked', binding)
       return true
     }
     return binding[SYM_IDENTIFIER_USED]
@@ -54,7 +55,10 @@ export function isNodeBindingUsed(path: NodePath<Identifier>) {
   return true
 }
 
-export function getSideInDeclaration(child: NodePath<Node>, parent: NodePath<VariableDeclaration>): 'left' | 'right' | null {
+export function getSideInDeclaration(
+  child: NodePath<babelTypes.Node>,
+  parent: NodePath<babelTypes.VariableDeclaration>,
+): 'left' | 'right' | null {
   let currentItem = child
   const { declarations } = parent.node
   const length = declarations.length
@@ -74,7 +78,10 @@ export function getSideInDeclaration(child: NodePath<Node>, parent: NodePath<Var
   return null
 }
 
-export function getSideInObjectProperty(child: NodePath<Node>, parent: NodePath<ObjectProperty>): 'left' | 'right' | null {
+export function getSideInObjectProperty(
+  child: NodePath<babelTypes.Node>,
+  parent: NodePath<babelTypes.ObjectProperty>,
+): 'left' | 'right' | null {
   if (!parent.node) {
     return null
   }
@@ -94,8 +101,8 @@ export function getSideInObjectProperty(child: NodePath<Node>, parent: NodePath<
 }
 
 export function getSideInAssignmentExpression(
-  child: NodePath<Node>,
-  parent: NodePath<AssignmentExpression>,
+  child: NodePath<babelTypes.Node>,
+  parent: NodePath<babelTypes.AssignmentExpression>,
 ): 'left' | 'right' | null {
   if (!parent.node) {
     return null
@@ -115,10 +122,10 @@ export function getSideInAssignmentExpression(
   return null
 }
 
-export function getSideInImportSpecifier(child: NodePath<Node>): 'left' | 'right' | null {
+export function getSideInImportSpecifier(child: NodePath<babelTypes.Node>): 'left' | 'right' | null {
   let currentItem = child
   do {
-    const parentPath = currentItem.parentPath as NodePath<ImportSpecifier>
+    const parentPath = currentItem.parentPath as NodePath<babelTypes.ImportSpecifier>
     if (parentPath.node) {
       if (currentItem.node === parentPath.node.imported) {
         return 'left'
@@ -128,6 +135,31 @@ export function getSideInImportSpecifier(child: NodePath<Node>): 'left' | 'right
         return 'right'
       }
     } else break
+  } while (currentItem)
+
+  return null
+}
+
+export function getSideInFunction(
+  child: NodePath<babelTypes.Node>,
+  parent: NodePath<babelTypes.Function>,
+): 'body' | 'params' | null {
+  if (!parent.node) {
+    return null
+  }
+
+  let currentItem = child
+  do {
+    if (currentItem.node === (parent.node as babelTypes.FunctionDeclaration).id) {
+      return null
+    }
+    if (parent.node.params.some(item => item === currentItem.node)) {
+      return 'params'
+    }
+    if (currentItem.node === parent.node) {
+      return 'body'
+    }
+    currentItem = currentItem.parentPath
   } while (currentItem)
 
   return null

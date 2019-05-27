@@ -314,6 +314,16 @@ const tests = [
       x();
     `,
   },
+  {
+    code: `
+      const x = b(j => j);
+      x();
+    `,
+    output: `
+      const x = b(j => j);
+      x();
+    `,
+  },
 ]
 
 tests.forEach(({ code, output }, index) => {
