@@ -1,6 +1,8 @@
 ### v2.1.1
 
+- Fix support for JSX Elements
 - Handle unused destructured parameters in functions properly
+- Fix handling of some function parameters/body variables
 
 ### v2.1.0
 

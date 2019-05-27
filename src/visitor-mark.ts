@@ -12,6 +12,9 @@ import {
 } from './common'
 
 export default {
+  JSXIdentifier(path: NodePath<babelTypes.JSXIdentifier>, { t }: { t: typeof babelTypes }) {
+    markNodeAsUsed(path)
+  },
   Identifier(path: NodePath<babelTypes.Identifier>, { t }: { t: typeof babelTypes }) {
     const parentPath = path.parentPath
 

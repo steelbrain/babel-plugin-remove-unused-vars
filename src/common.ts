@@ -33,7 +33,7 @@ export function isNodeUsed(node: babelTypes.Node) {
   return !!node[SYM_IDENTIFIER_USED]
 }
 
-export function markNodeAsUsed(path: NodePath<babelTypes.Identifier>) {
+export function markNodeAsUsed(path: NodePath<babelTypes.Identifier | babelTypes.JSXIdentifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
   if (binding) {
     if (!isNodeTracked(binding)) {
