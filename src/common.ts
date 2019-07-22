@@ -67,6 +67,11 @@ export function getSideInDeclaration(
 
   do {
     for (let i = 0; i < length; i++) {
+      // It's a usage whenever it's a type reference
+      if (babelTypes.isTSTypeReference(currentItem)) {
+        return 'right'
+      }
+
       if (declarations[i].id === currentItem.node) {
         return 'left'
       }
@@ -159,6 +164,10 @@ export function getSideInFunction(
   do {
     if (currentItem.node === (parent.node as babelTypes.FunctionDeclaration).id) {
       return null
+    }
+    // It's a usage whenever it's a type reference
+    if (babelTypes.isTSTypeReference(currentItem)) {
+      return 'body'
     }
     if (parent.node.params.some(item => item === currentItem.node)) {
       return 'params'
