@@ -1,8 +1,9 @@
 import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
 import {
-  markNodeAsTracked,
   markNodeAsUsed,
+  markNodeAsTracked,
+  markNodeAsExternal,
   getSideInFunction,
   getSideInDeclaration,
   getSideInImportSpecifier,
@@ -34,10 +35,12 @@ export default {
       // Handle recursive destructuring here
       if (babelTypes.isImportDefaultSpecifier(parentPath)) {
         markNodeAsTracked(path.node)
+        markNodeAsExternal(path)
       } else {
         const sideIms = getSideInImportSpecifier(path)
         if (sideIms === 'right') {
           markNodeAsTracked(path.node)
+          markNodeAsExternal(path)
         }
       }
 
@@ -94,6 +97,7 @@ export default {
       if (functionSide === 'params') {
         if (babelTypes.isFunction(parentPath)) {
           markNodeAsTracked(path.node)
+          markNodeAsExternal(path)
         } else if (babelTypes.isObjectProperty(parentPath)) {
           if (isObjectPropertyDeclaration(path, parentPath as NodePath<babelTypes.ObjectProperty>)) {
             markNodeAsTracked(path.node)

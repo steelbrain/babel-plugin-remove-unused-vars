@@ -3,6 +3,7 @@ import { NodePath } from '@babel/traverse'
 
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
 export const SYM_IDENTIFIER_TRACKED = Symbol('IDENTIFIER_TRACKED')
+export const SYM_IDENTIFIER_EXTERNAL = Symbol('IDENTIFIER_EXTERNAL')
 
 export const EXCLUDED_NODES = new Set(['this'])
 
@@ -25,10 +26,15 @@ export function getParentFunctionOrStatement(path: NodePath<babelTypes.Node>) {
 export function markNodeAsTracked(node: babelTypes.Node) {
   node[SYM_IDENTIFIER_TRACKED] = true
   node[SYM_IDENTIFIER_USED] = false
+  node[SYM_IDENTIFIER_EXTERNAL] = false
 }
 
 export function isNodeTracked(node: babelTypes.Node) {
   return !!node[SYM_IDENTIFIER_TRACKED]
+}
+
+export function isNodeExternal(node: babelTypes.Node) {
+  return !!node[SYM_IDENTIFIER_EXTERNAL]
 }
 
 export function isNodeUsed(node: babelTypes.Node) {
@@ -44,6 +50,15 @@ export function markNodeAsUsed(path: NodePath<babelTypes.Identifier | babelTypes
     binding[SYM_IDENTIFIER_USED] = true
   }
 }
+export function markNodeAsExternal(path: NodePath<babelTypes.Identifier | babelTypes.JSXIdentifier>) {
+  const binding = path.scope.getBindingIdentifier(path.node.name)
+  if (binding) {
+    if (!isNodeTracked(binding)) {
+      return
+    }
+    binding[SYM_IDENTIFIER_EXTERNAL] = true
+  }
+}
 
 export function isNodeBindingUsed(path: NodePath<babelTypes.Identifier>) {
   const binding = path.scope.getBindingIdentifier(path.node.name)
@@ -53,6 +68,17 @@ export function isNodeBindingUsed(path: NodePath<babelTypes.Identifier>) {
       return true
     }
     return binding[SYM_IDENTIFIER_USED]
+  }
+  return true
+}
+
+export function isNodeBindingExternal(path: NodePath<babelTypes.Identifier>) {
+  const binding = path.scope.getBindingIdentifier(path.node.name)
+  if (binding) {
+    if (isNodeExternal(binding)) {
+      return true
+    }
+    return binding[SYM_IDENTIFIER_EXTERNAL]
   }
   return true
 }

@@ -2,6 +2,7 @@ import { NodePath } from '@babel/traverse'
 import * as babelTypes from '@babel/types'
 import {
   isNodeBindingUsed,
+  isNodeBindingExternal,
   getSideInDeclaration,
   getSideInObjectProperty,
   getParentFunctionOrStatement,
@@ -39,8 +40,9 @@ export default {
         // - mark as used
       } else if (babelTypes.isAssignmentExpression(expressionPath)) {
         const sideAse = getSideInAssignmentExpression(path, expressionPath as NodePath<babelTypes.AssignmentExpression>)
+
         if (sideAse === 'left') {
-          if (!isNodeBindingUsed(path)) {
+          if (!isNodeBindingUsed(path) && !isNodeBindingExternal(path)) {
             if (babelTypes.isAssignmentExpression((expressionPath.node as babelTypes.AssignmentExpression).right)) {
               expressionPath.replaceWith((expressionPath.node as babelTypes.AssignmentExpression).right)
             } else {
