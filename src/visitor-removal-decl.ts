@@ -67,7 +67,11 @@ export default {
     if (babelTypes.isImportDeclaration(statementParent)) {
       if (babelTypes.isImportDefaultSpecifier(parentPath)) {
         if (!isNodeUsed(path.node)) {
-          statementParent.remove()
+          if ((statementParent.node as babelTypes.ImportDeclaration).specifiers.length === 1) {
+            statementParent.remove()
+          } else {
+            parentPath.remove()
+          }
         }
         return
       } else {
