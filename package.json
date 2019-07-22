@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-remove-unused-vars",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Babel plugin to remove unused variables and imports (Babel autofix for ESLint's no-unused-vars)",
   "main": "lib/index.js",
   "scripts": {
