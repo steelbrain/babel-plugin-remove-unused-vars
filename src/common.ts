@@ -4,6 +4,8 @@ import { NodePath } from '@babel/traverse'
 export const SYM_IDENTIFIER_USED = Symbol('IDENTIFIER_USED')
 export const SYM_IDENTIFIER_TRACKED = Symbol('IDENTIFIER_TRACKED')
 
+export const EXCLUDED_NODES = new Set(['this'])
+
 export function getParentFunctionOrStatement(path: NodePath<babelTypes.Node>) {
   do {
     if (!path.parentPath || (Array.isArray(path.container) && path.isStatement()) || path.isFunction()) {
@@ -30,7 +32,7 @@ export function isNodeTracked(node: babelTypes.Node) {
 }
 
 export function isNodeUsed(node: babelTypes.Node) {
-  return !!node[SYM_IDENTIFIER_USED]
+  return EXCLUDED_NODES.has((node as babelTypes.Identifier).name) || !!node[SYM_IDENTIFIER_USED]
 }
 
 export function markNodeAsUsed(path: NodePath<babelTypes.Identifier | babelTypes.JSXIdentifier>) {
