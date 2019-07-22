@@ -122,6 +122,13 @@ export function getSideInAssignmentExpression(
 
   let currentItem = child
   do {
+    // If it's an object, anything other than object being written to is a usage
+    if (
+      babelTypes.isMemberExpression(currentItem) &&
+      (currentItem.node as babelTypes.MemberExpression).object !== child.node
+    ) {
+      return 'right'
+    }
     if (currentItem.node === parent.node.left) {
       return 'left'
     }
