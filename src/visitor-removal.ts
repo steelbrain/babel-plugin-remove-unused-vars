@@ -13,7 +13,13 @@ export default {
     const parentPath = path.parentPath
 
     if (babelTypes.isMemberExpression(parentPath)) {
-      return
+      // Only process when left-most var in members
+      if (
+        !(parentPath.node as babelTypes.MemberExpression).computed &&
+        path.node !== (parentPath.node as babelTypes.MemberExpression).object
+      ) {
+        return
+      }
     }
 
     const statementParent = getParentFunctionOrStatement(path)
