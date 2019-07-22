@@ -1,3 +1,9 @@
+### v2.2.0
+
+- Improvements for Typescript support
+- Improvements in handling computed values
+- Does not remove import statement if only default specifier is unused
+
 ### v2.1.1
 
 - Fix support for JSX Elements
